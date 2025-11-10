@@ -1,0 +1,29 @@
+import Hero from '@/components/sections/Hero'
+import LogosStrip from '@/components/sections/LogosStrip'
+import Features from '@/components/sections/Features'
+import About from '@/components/sections/About'
+import UseCases from '@/components/sections/UseCases'
+import HowItWorks from '@/components/sections/HowItWorks'
+import Sustainability from '@/components/sections/Sustainability'
+import Testimonials from '@/components/sections/Testimonials'
+import CTA from '@/components/sections/CTA'
+import Contact from '@/components/sections/Contact'
+
+export default function Home() {
+  return (
+    <>
+      <Hero />
+      <LogosStrip />
+      <Features />
+      <About />
+      <UseCases />
+      <HowItWorks />
+      <Sustainability />
+      <Testimonials />
+      <CTA />
+      <Contact />
+    </>
+  )
+}
+
+
