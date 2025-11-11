@@ -69,14 +69,7 @@ const Header: React.FC = () => {
           </div>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center space-x-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => scrollToSection('contato')}
-            >
-              Entrar
-            </Button>
+          <div className="hidden md:flex items-center">
             <Button
               variant="primary"
               size="sm"
@@ -150,15 +143,7 @@ const Header: React.FC = () => {
               >
                 Contato
               </button>
-              <div className="pt-4 space-y-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => scrollToSection('contato')}
-                >
-                  Entrar
-                </Button>
+              <div className="pt-4">
                 <Button
                   variant="primary"
                   size="sm"
