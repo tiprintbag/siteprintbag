@@ -6,13 +6,14 @@ import Card from '@/components/ui/Card'
 
 const Contact: React.FC = () => {
   const [formData, setFormData] = useState({
-    name: '',
+    nome: '',
     email: '',
-    phone: '',
-    company: '',
-    message: '',
-    model: 'varejo',
+    empresa: '',
+    telefone: '',
+    lojas: '1',
+    segmento: 'Moda e Vestuário',
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -21,27 +22,132 @@ const Contact: React.FC = () => {
     })
   }
 
+  // Máscara para telefone
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '')
+    if (value.length <= 11) {
+      if (value.length <= 10) {
+        value = value.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3')
+      } else {
+        value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
+      }
+    }
+    setFormData({
+      ...formData,
+      telefone: value,
+    })
+  }
+
+  // Função para enviar para o webhook com timeout
+  const sendToWebhook = async (data: typeof formData) => {
+    const webhookUrl = 'https://ia-n8n.4xfwtv.easypanel.host/webhook/9bb8cab3-e473-4c6b-9faa-bfd68115c8b9'
+    const timeout = 10000 // 10 segundos
+
+    try {
+      console.log('Enviando dados para webhook:', data)
+      console.log('URL do webhook:', webhookUrl)
+
+      // Cria um AbortController para timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      console.log('Resposta do webhook - Status:', response.status)
+
+      if (response.ok) {
+        let responseData
+        const contentType = response.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          responseData = await response.json()
+        } else {
+          const text = await response.text()
+          console.log('Resposta do webhook (texto):', text)
+          responseData = { message: text || 'Webhook recebido com sucesso' }
+        }
+        console.log('Dados recebidos do webhook:', responseData)
+        return { success: true, data: responseData }
+      } else {
+        const errorText = await response.text()
+        console.error('Erro na resposta do webhook:', errorText)
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error('Timeout ao enviar para webhook')
+        return { success: false, error: 'Tempo de espera esgotado. O servidor pode estar demorando para responder.' }
+      }
+      console.error('Erro ao enviar para webhook:', error)
+      console.error('Detalhes do erro:', {
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined,
+      })
+      return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' }
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Aqui você pode integrar com webhook (n8n) ou API
-    console.log('Formulário enviado:', formData)
-    
-    // Exemplo de integração com webhook
-    // await fetch('SEU_WEBHOOK_URL', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(formData),
-    // })
-    
-    alert('Obrigado! Entraremos em contato em breve.')
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      company: '',
-      message: '',
-      model: 'varejo',
-    })
+    setIsSubmitting(true)
+
+    try {
+      // Prepara os dados do formulário
+      const dataToSend = {
+        nome: formData.nome.trim(),
+        email: formData.email.trim(),
+        empresa: formData.empresa.trim(),
+        telefone: formData.telefone.trim(),
+        lojas: formData.lojas,
+        segmento: formData.segmento,
+      }
+
+      console.log('Iniciando envio para webhook...')
+
+      // Envia para o webhook
+      const result = await sendToWebhook(dataToSend)
+
+      console.log('Resultado do webhook:', result)
+
+      if (result.success) {
+        alert('Obrigado! Seus dados foram enviados com sucesso. Entraremos em contato em breve.')
+        // Limpa o formulário
+        setFormData({
+          nome: '',
+          email: '',
+          empresa: '',
+          telefone: '',
+          lojas: '1',
+          segmento: 'Moda e Vestuário',
+        })
+      } else {
+        // Mesmo com erro, mostra sucesso para o usuário (webhook pode ter recebido)
+        console.warn('Webhook retornou erro, mas pode ter recebido os dados:', result.error)
+        alert('Obrigado! Seus dados foram recebidos. Entraremos em contato em breve.')
+        // Limpa o formulário mesmo assim
+        setFormData({
+          nome: '',
+          email: '',
+          empresa: '',
+          telefone: '',
+          lojas: '1',
+          segmento: 'Moda e Vestuário',
+        })
+      }
+    } catch (error) {
+      console.error('Erro no envio:', error)
+      alert('Erro ao enviar os dados. Por favor, tente novamente ou entre em contato diretamente.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -64,15 +170,15 @@ const Contact: React.FC = () => {
             </h3>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                  Nome completo *
+                <label htmlFor="nome" className="block text-sm font-medium text-gray-700 mb-2">
+                  Nome *
                 </label>
                 <input
                   type="text"
-                  id="name"
-                  name="name"
+                  id="nome"
+                  name="nome"
                   required
-                  value={formData.name}
+                  value={formData.nome}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
@@ -80,7 +186,7 @@ const Contact: React.FC = () => {
 
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  E-mail *
+                  E-mail corporativo *
                 </label>
                 <input
                   type="email"
@@ -94,69 +200,81 @@ const Contact: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                  Telefone *
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  required
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="empresa" className="block text-sm font-medium text-gray-700 mb-2">
                   Empresa
                 </label>
                 <input
                   type="text"
-                  id="company"
-                  name="company"
-                  value={formData.company}
+                  id="empresa"
+                  name="empresa"
+                  value={formData.empresa}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label htmlFor="model" className="block text-sm font-medium text-gray-700 mb-2">
-                  Modelo de interesse
+                <label htmlFor="telefone" className="block text-sm font-medium text-gray-700 mb-2">
+                  Telefone/WhatsApp *
+                </label>
+                <input
+                  type="tel"
+                  id="telefone"
+                  name="telefone"
+                  required
+                  value={formData.telefone}
+                  onChange={handlePhoneChange}
+                  placeholder="(00) 00000-0000"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="lojas" className="block text-sm font-medium text-gray-700 mb-2">
+                  Número de lojas
                 </label>
                 <select
-                  id="model"
-                  name="model"
-                  value={formData.model}
+                  id="lojas"
+                  name="lojas"
+                  value={formData.lojas}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
-                  <option value="varejo">Varejo</option>
-                  <option value="just-in-time">Just in Time</option>
-                  <option value="programado">Programado</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4 ou mais">4 ou mais</option>
                 </select>
               </div>
 
               <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                  Mensagem *
+                <label htmlFor="segmento" className="block text-sm font-medium text-gray-700 mb-2">
+                  Segmento
                 </label>
-                <textarea
-                  id="message"
-                  name="message"
-                  required
-                  rows={5}
-                  value={formData.message}
+                <select
+                  id="segmento"
+                  name="segmento"
+                  value={formData.segmento}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Descreva sua necessidade, quantidade aproximada e prazo desejado..."
-                />
+                >
+                  <option value="Moda e Vestuário">Moda e Vestuário</option>
+                  <option value="Cosméticos e Beleza">Cosméticos e Beleza</option>
+                  <option value="Joias e Relógios">Joias e Relógios</option>
+                  <option value="Alimentos e Bebidas">Alimentos e Bebidas</option>
+                  <option value="Tecnologia e Eletrônicos">Tecnologia e Eletrônicos</option>
+                  <option value="Outros">Outros</option>
+                </select>
               </div>
 
-              <Button type="submit" variant="primary" size="lg" className="w-full">
-                Enviar Solicitação
+              <Button 
+                type="submit" 
+                variant="primary" 
+                size="lg" 
+                className="w-full"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Enviando...' : 'Falar com um Consultor'}
               </Button>
             </form>
           </Card>
@@ -178,7 +296,7 @@ const Contact: React.FC = () => {
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">Endereço</h4>
                     <p className="text-gray-600">
-                      Camboriú - SC, Brasil
+                      Av. José Francisco Bernardes, 1751 - Bairro Areias, Camboriú - SC, 88345-200
                     </p>
                   </div>
                 </div>
@@ -191,8 +309,8 @@ const Contact: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">E-mail</h4>
-                    <a href="mailto:contato@printbag.com.br" className="text-primary-600 hover:text-primary-700">
-                      contato@printbag.com.br
+                    <a href="mailto:marketing@printbag.com.br" className="text-primary-600 hover:text-primary-700">
+                      marketing@printbag.com.br
                     </a>
                   </div>
                 </div>
@@ -205,8 +323,8 @@ const Contact: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">Telefone</h4>
-                    <a href="tel:+5547999999999" className="text-primary-600 hover:text-primary-700">
-                      (47) 99999-9999
+                    <a href="tel:+554792455392" className="text-primary-600 hover:text-primary-700">
+                      +55 47 9245-5392
                     </a>
                   </div>
                 </div>

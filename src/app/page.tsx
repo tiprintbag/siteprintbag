@@ -6,7 +6,6 @@ import UseCases from '@/components/sections/UseCases'
 import HowItWorks from '@/components/sections/HowItWorks'
 import Sustainability from '@/components/sections/Sustainability'
 import Testimonials from '@/components/sections/Testimonials'
-import CTA from '@/components/sections/CTA'
 import Contact from '@/components/sections/Contact'
 
 export default function Home() {
@@ -20,7 +19,6 @@ export default function Home() {
       <HowItWorks />
       <Sustainability />
       <Testimonials />
-      <CTA />
       <Contact />
     </>
   )

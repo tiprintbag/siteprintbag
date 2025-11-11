@@ -1,8 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  output: 'export',
-  basePath: '/siteprintbag',
+  // Configurações para GitHub Pages (descomente para build de produção)
+  // basePath: '/siteprintbag',
+  // output: 'export',
   images: {
     unoptimized: true,
   },

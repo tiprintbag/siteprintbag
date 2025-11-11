@@ -110,6 +110,11 @@ const Footer: React.FC = () => {
               </a>
             </div>
           </div>
+          <div className="mt-4 pt-4 border-t border-gray-800 text-center">
+            <p className="text-sm text-gray-500">
+              Desenvolvido por <span className="text-gray-400">Pedro Levorato</span>
+            </p>
+          </div>
         </div>
       </div>
     </footer>
