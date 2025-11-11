@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   // Configurações para GitHub Pages
-  basePath: process.env.NODE_ENV === 'production' ? '/siteprintbag' : '',
+  basePath: '/siteprintbag',
   output: 'export',
   images: {
     unoptimized: true,
